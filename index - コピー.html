@@ -1,0 +1,236 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>竹内希来里＆蔵盛妃那乃のひらがなゲッター</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: sans-serif;
+            touch-action: none;
+        }
+
+        canvas {
+            background-color: #fff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let gameState = 'select'; // 'select', 'playing', 'gameover'
+        let targetMember = '';
+        let targetText = '';
+        let score = 0;
+
+        // 画像読み込み
+        const imgKirari = new Image();
+        imgKirari.src = './kirari.png';
+
+        const imgHinano = new Image();
+        imgHinano.src = './hinano.png';
+
+        let playerImg = null;
+        let playerX = 160;
+        const playerY = 470;
+        const playerWidth = 80;
+        const playerHeight = 100;
+
+        let fallingChars = [];
+        const allKana = ["あ", "い", "う", "え", "お", "か", "き", "く", "け", "こ", "さ", "し", "す", "せ", "そ", "た", "ち", "つ", "て", "と", "な", "に", "ぬ", "ね", "の", "は", "ひ", "ふ", "へ", "ほ", "ま", "み", "む", "め", "も", "や", "ゆ", "よ", "ら", "り", "る", "れ", "ろ", "わ", "を", "ん"];
+
+        // タッチ/マウス移動処理
+        function handleMove(e) {
+            if (gameState !== 'playing') return;
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            playerX = (clientX - rect.left) - playerWidth / 2;
+
+            if (playerX < 0) playerX = 0;
+            if (playerX > canvas.width - playerWidth) playerX = canvas.width - playerWidth;
+        }
+
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('touchmove', handleMove);
+
+        // タップ/クリック判定
+        canvas.addEventListener('click', handleClick);
+        canvas.addEventListener('touchstart', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            handleClick({ clientX: touch.clientX, clientY: touch.clientY });
+        });
+
+        function handleClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (gameState === 'select') {
+                if (x >= 30 && x <= 180 && y >= 200 && y <= 380) {
+                    startGame('kirari');
+                }
+                if (x >= 220 && x <= 370 && y >= 200 && y <= 380) {
+                    startGame('hinano');
+                }
+            } else if (gameState === 'gameover') {
+                gameState = 'select';
+            }
+        }
+
+        function startGame(member) {
+            targetMember = member;
+            score = 0;
+            fallingChars = [];
+            if (member === 'kirari') {
+                targetText = 'たけうちきらり';
+                playerImg = imgKirari;
+            } else {
+                targetText = 'くらもりひなの';
+                playerImg = imgHinano;
+            }
+            gameState = 'playing';
+        }
+
+        function update() {
+            if (gameState === 'playing') {
+                // スコアに応じてスピードと出現率が少しずつアップ
+                let baseSpeed = 1.2 + Math.floor(score / 50) * 0.3; // 初期速度を1.2に緩和
+                let spawnRate = 0.025 + Math.min(score / 10000, 0.02); // 出現頻度を半減
+
+                // ひらがな生成
+                if (Math.random() < spawnRate) {
+                    let char;
+                    // 正解文字が出る確率を40%に調整
+                    if (Math.random() < 0.4) {
+                        char = targetText[Math.floor(Math.random() * targetText.length)];
+                    } else {
+                        char = allKana[Math.floor(Math.random() * allKana.length)];
+                    }
+                    fallingChars.push({
+                        char: char,
+                        x: Math.random() * (canvas.width - 50) + 20,
+                        y: -20,
+                        speed: baseSpeed + Math.random() * 1.0
+                    });
+                }
+
+                // 移動と判定
+                for (let i = fallingChars.length - 1; i >= 0; i--) {
+                    let fc = fallingChars[i];
+                    fc.y += fc.speed;
+
+                    // 当たり判定（スマホの指の操作感に合わせて少し大きめに補正）
+                    if (
+                        fc.x > playerX - 15 &&
+                        fc.x < playerX + playerWidth + 15 &&
+                        fc.y > playerY &&
+                        fc.y < playerY + playerHeight
+                    ) {
+                        if (targetText.includes(fc.char)) {
+                            score += 10;
+                            fallingChars.splice(i, 1);
+                        } else {
+                            gameState = 'gameover';
+                        }
+                    } else if (fc.y > canvas.height) {
+                        // 正解・不正解に関わらず画面下まで流れて消えた場合はセーフ
+                        fallingChars.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (gameState === 'select') {
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 18px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('竹内希来里＆蔵盛妃那乃の', 200, 80);
+                ctx.fillText('ひらがなゲッター', 200, 110);
+                ctx.font = '14px sans-serif';
+                ctx.fillText('メンバーを選んでください', 200, 150);
+
+                // きらり枠
+                ctx.fillStyle = '#e6f2ff';
+                ctx.fillRect(30, 200, 150, 180);
+                ctx.strokeStyle = '#0066cc';
+                ctx.strokeRect(30, 200, 150, 180);
+                if (imgKirari.complete) ctx.drawImage(imgKirari, 45, 210, 120, 130);
+                ctx.fillStyle = '#000';
+                ctx.fillText('竹内希来里', 105, 365);
+
+                // ひなの枠
+                ctx.fillStyle = '#ffe6f2';
+                ctx.fillRect(220, 200, 150, 180);
+                ctx.strokeStyle = '#cc0066';
+                ctx.strokeRect(220, 200, 150, 180);
+                if (imgHinano.complete) ctx.drawImage(imgHinano, 235, 210, 120, 130);
+                ctx.fillStyle = '#000';
+                ctx.fillText('蔵盛妃那乃', 295, 365);
+
+            } else if (gameState === 'playing') {
+                // UI
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 14px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText(`目標: 「${targetText}」`, 10, 25);
+                ctx.fillText(`スコア: ${score}`, 10, 50);
+
+                // ひらがな描画
+                ctx.font = 'bold 26px sans-serif';
+                ctx.fillStyle = '#d32f2f';
+                fallingChars.forEach(fc => {
+                    ctx.fillText(fc.char, fc.x, fc.y);
+                });
+
+                // プレイヤー描画
+                if (playerImg.complete) {
+                    ctx.drawImage(playerImg, playerX, playerY, playerWidth, playerHeight);
+                } else {
+                    ctx.fillStyle = '#888';
+                    ctx.fillRect(playerX, playerY, playerWidth, playerHeight);
+                }
+
+            } else if (gameState === 'gameover') {
+                ctx.fillStyle = '#d32f2f';
+                ctx.font = 'bold 30px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', 200, 250);
+
+                ctx.fillStyle = '#000';
+                ctx.font = '20px sans-serif';
+                ctx.fillText(`スコア: ${score}`, 200, 300);
+
+                ctx.font = '14px sans-serif';
+                ctx.fillStyle = '#666';
+                ctx.fillText('タップしてタイトルへ戻る', 200, 360);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
