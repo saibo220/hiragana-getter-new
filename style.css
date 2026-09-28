@@ -1,0 +1,269 @@
+/* 全体設定（パステルイエローのテーマ） */
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #fffde7;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+
+.screen {
+    text-align: center;
+    max-width: 450px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
+    border: 3px solid #ffe082;
+}
+
+/* タイトルエリア */
+.title-container {
+    background: linear-gradient(135deg, #fff9c4 0%, #fff176 100%);
+    border: 2px solid #fbc02d;
+    border-radius: 15px;
+    padding: 20px 10px;
+    margin-bottom: 20px;
+}
+
+.title-badge {
+    background: #f57f17;
+    color: white;
+    font-size: 0.8rem;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+h1 {
+    font-size: 1.4rem;
+    color: #f57f17;
+    margin: 10px 0;
+}
+
+.highlight-text {
+    color: #e65100;
+    font-size: 1.7rem;
+}
+
+.subtitle {
+    font-size: 0.85rem;
+    color: #555;
+}
+
+/* ボタン関係 */
+.btn {
+    padding: 12px 20px;
+    font-size: 1rem;
+    border-radius: 25px;
+    border: none;
+    cursor: pointer;
+    margin: 5px;
+    font-weight: bold;
+}
+
+.primary-btn {
+    background-color: #ff9800;
+    color: white;
+}
+
+.secondary-btn {
+    background-color: #ffffff;
+    color: #f57c00;
+    border: 2px solid #ff9800;
+}
+
+.text-btn {
+    background: transparent;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.small-btn {
+    padding: 6px 15px;
+    font-size: 0.85rem;
+    border-radius: 15px;
+}
+
+/* メンバー選択カード */
+.member-select-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.member-card {
+    display: flex;
+    align-items: center;
+    background: #fff8e1;
+    border: 2px solid #ffe082;
+    border-radius: 15px;
+    padding: 10px 15px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+    .member-card:hover {
+        background-color: #fff3e0;
+    }
+
+.img-wrapper {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid #ff9800;
+    background-color: #ffe0b2;
+    margin-right: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.member-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block !important;
+}
+
+.member-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.member-name {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.member-sub {
+    font-size: 0.8rem;
+    color: #e65100;
+}
+
+/* モーダル共通 (ポップアップ) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    max-width: 320px;
+    width: 85%;
+    text-align: left;
+}
+
+.warning {
+    color: #d32f2f;
+    background: #ffebee;
+    padding: 6px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+}
+
+/* ゲーム画面設定 */
+#gameCanvas {
+    background-color: #ffffff;
+    border: 3px solid #ffb74d;
+    border-radius: 10px;
+    display: block;
+    margin: 10px auto;
+    max-width: 100%;
+    touch-action: none;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    padding: 0 10px;
+}
+
+.game-controls {
+    margin-top: 5px;
+}
+
+.controls-hint {
+    font-size: 0.8rem;
+    color: #777;
+    margin-top: 5px;
+}
+
+/* ゲームオーバー画面（ポップアップ専用） */
+.gameover-content {
+    text-align: center;
+    padding: 25px 20px;
+    border: 3px solid #f57f17;
+    background: #ffffff;
+    animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.gameover-title {
+    color: #d32f2f;
+    font-size: 2rem;
+    margin: 0 0 10px 0;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.gameover-reason {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.final-score-box {
+    background: #fff8e1;
+    border: 2px dashed #ffb74d;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 20px;
+}
+
+    .final-score-box span {
+        font-size: 0.85rem;
+        color: #f57f17;
+        font-weight: bold;
+    }
+
+.final-score {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.modal-btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}

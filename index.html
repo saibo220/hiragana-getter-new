@@ -2,235 +2,117 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>竹内希来里＆蔵盛妃那乃のひらがなゲッター</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #222;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            font-family: sans-serif;
-            touch-action: none;
-        }
-
-        canvas {
-            background-color: #fff;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <!-- ========================================== -->
+    <!-- ① タイトル＆説明画面                       -->
+    <!-- ========================================== -->
+    <div id="start-screen" class="screen">
+        <div class="title-container">
+            <span class="title-badge">ひらがなキャッチゲーム</span>
+            <h1>竹内希来里＆蔵盛妃那乃の<br><span class="highlight-text">ひらがなゲッター</span></h1>
+            <p class="subtitle">落ちてくる文字を見極めてキャッチしよう！✨</p>
+        </div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        <div class="start-btn-group">
+            <button id="show-rule-btn" class="btn secondary-btn">📖 ルール説明</button>
+            <button id="to-select-btn" class="btn primary-btn">🎮 メンバー選択へ</button>
+        </div>
+    </div>
 
-        let gameState = 'select'; // 'select', 'playing', 'gameover'
-        let targetMember = '';
-        let targetText = '';
-        let score = 0;
+    <!-- ルールモーダル（ポップアップ） -->
+    <div id="rule-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2>🎮 ルール・遊び方</h2>
+            <div class="rule-body">
+                <p><strong>【基本操作】</strong><br>左右に動かして落ちてくる文字をキャッチ！</p>
+                <p><strong>【集める文字】</strong></p>
+                <ul>
+                    <li><strong>竹内希来里：</strong>「た・け・う・ち・き・ら・り」</li>
+                    <li><strong>蔵盛妃那乃：</strong>「く・ら・も・り・ひ・な・の」</li>
+                </ul>
+                <p class="warning">⚠️ 上記以外の関係ない文字を拾うと即ゲームオーバー！</p>
+            </div>
+            <button id="close-rule-btn" class="btn primary-btn">とじる</button>
+        </div>
+    </div>
 
-        // 画像読み込み
-        const imgKirari = new Image();
-        imgKirari.src = './kirari.png';
+    <!-- ========================================== -->
+    <!-- ② メンバー選択画面                         -->
+    <!-- ========================================== -->
+    <div id="select-screen" class="screen" style="display: none;">
+        <h2>プレイするメンバーを選んでね</h2>
 
-        const imgHinano = new Image();
-        imgHinano.src = './hinano.png';
+        <div class="member-select-group">
+            <!-- 竹内希来里 -->
+            <button class="member-card" onclick="chooseMember('kirari')">
+                <div class="img-wrapper">
+                    <img src="kirari.png" alt="竹内希来里" class="member-img">
+                </div>
+                <div class="member-info">
+                    <span class="member-name">竹内希来里</span>
+                    <span class="member-sub">「たけうちきらり」を集める</span>
+                </div>
+            </button>
 
-        let playerImg = null;
-        let playerX = 160;
-        const playerY = 470;
-        const playerWidth = 80;
-        const playerHeight = 100;
+            <!-- 蔵盛妃那乃 -->
+            <button class="member-card" onclick="chooseMember('hinano')">
+                <div class="img-wrapper">
+                    <img src="hinano.png" alt="蔵盛妃那乃" class="member-img">
+                </div>
+                <div class="member-info">
+                    <span class="member-name">蔵盛妃那乃</span>
+                    <span class="member-sub">「くらもりひなの」を集める</span>
+                </div>
+            </button>
+        </div>
 
-        let fallingChars = [];
-        const allKana = ["あ", "い", "う", "え", "お", "か", "き", "く", "け", "こ", "さ", "し", "す", "せ", "そ", "た", "ち", "つ", "て", "と", "な", "に", "ぬ", "ね", "の", "は", "ひ", "ふ", "へ", "ほ", "ま", "み", "む", "め", "も", "や", "ゆ", "よ", "ら", "り", "る", "れ", "ろ", "わ", "を", "ん"];
+        <button id="back-to-title-btn" class="btn text-btn">← タイトルに戻る</button>
+    </div>
 
-        // タッチ/マウス移動処理
-        function handleMove(e) {
-            if (gameState !== 'playing') return;
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            playerX = (clientX - rect.left) - playerWidth / 2;
+    <!-- ========================================== -->
+    <!-- ③ ゲーム画面                               -->
+    <!-- ========================================== -->
+    <div id="game-screen" class="screen" style="display: none;">
+        <div class="game-header">
+            <div id="score-display">スコア: <span id="score">0</span></div>
+            <div id="current-member-display">メンバー: <span id="playing-member">-</span></div>
+        </div>
 
-            if (playerX < 0) playerX = 0;
-            if (playerX > canvas.width - playerWidth) playerX = canvas.width - playerWidth;
-        }
+        <!-- ゲーム領域 -->
+        <canvas id="gameCanvas" width="400" height="500"></canvas>
 
-        canvas.addEventListener('mousemove', handleMove);
-        canvas.addEventListener('touchmove', handleMove);
+        <!-- 中断ボタン -->
+        <div class="game-controls">
+            <button id="pause-btn" class="btn secondary-btn small-btn">⏸ 中断する</button>
+        </div>
+        <p class="controls-hint">💡 矢印キー（← →）または画面のスライドで移動できます</p>
+    </div>
 
-        // タップ/クリック判定
-        canvas.addEventListener('click', handleClick);
-        canvas.addEventListener('touchstart', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            handleClick({ clientX: touch.clientX, clientY: touch.clientY });
-        });
+    <!-- ========================================== -->
+    <!-- ④ ゲームオーバー画面（中央モーダル）        -->
+    <!-- ========================================== -->
+    <div id="gameover-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content gameover-content">
+            <h2 class="gameover-title">GAME OVER</h2>
+            <p class="gameover-reason">違う文字をキャッチしてしまった！</p>
 
-        function handleClick(e) {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            <div class="final-score-box">
+                <span>最終スコア</span>
+                <div class="final-score" id="final-score">0</div>
+            </div>
 
-            if (gameState === 'select') {
-                if (x >= 30 && x <= 180 && y >= 200 && y <= 380) {
-                    startGame('kirari');
-                }
-                if (x >= 220 && x <= 370 && y >= 200 && y <= 380) {
-                    startGame('hinano');
-                }
-            } else if (gameState === 'gameover') {
-                gameState = 'select';
-            }
-        }
+            <div class="modal-btn-group">
+                <button id="retry-btn" class="btn primary-btn">もう一度あそぶ</button>
+                <button id="quit-btn" class="btn secondary-btn">タイトルへ戻る</button>
+            </div>
+        </div>
+    </div>
 
-        function startGame(member) {
-            targetMember = member;
-            score = 0;
-            fallingChars = [];
-            if (member === 'kirari') {
-                targetText = 'たけうちきらり';
-                playerImg = imgKirari;
-            } else {
-                targetText = 'くらもりひなの';
-                playerImg = imgHinano;
-            }
-            gameState = 'playing';
-        }
-
-        function update() {
-            if (gameState === 'playing') {
-                // スコアに応じてスピードと出現率が少しずつアップ
-                let baseSpeed = 1.2 + Math.floor(score / 50) * 0.3; // 初期速度を1.2に緩和
-                let spawnRate = 0.025 + Math.min(score / 10000, 0.02); // 出現頻度を半減
-
-                // ひらがな生成
-                if (Math.random() < spawnRate) {
-                    let char;
-                    // 正解文字が出る確率を40%に調整
-                    if (Math.random() < 0.4) {
-                        char = targetText[Math.floor(Math.random() * targetText.length)];
-                    } else {
-                        char = allKana[Math.floor(Math.random() * allKana.length)];
-                    }
-                    fallingChars.push({
-                        char: char,
-                        x: Math.random() * (canvas.width - 50) + 20,
-                        y: -20,
-                        speed: baseSpeed + Math.random() * 1.0
-                    });
-                }
-
-                // 移動と判定
-                for (let i = fallingChars.length - 1; i >= 0; i--) {
-                    let fc = fallingChars[i];
-                    fc.y += fc.speed;
-
-                    // 当たり判定（スマホの指の操作感に合わせて少し大きめに補正）
-                    if (
-                        fc.x > playerX - 15 &&
-                        fc.x < playerX + playerWidth + 15 &&
-                        fc.y > playerY &&
-                        fc.y < playerY + playerHeight
-                    ) {
-                        if (targetText.includes(fc.char)) {
-                            score += 10;
-                            fallingChars.splice(i, 1);
-                        } else {
-                            gameState = 'gameover';
-                        }
-                    } else if (fc.y > canvas.height) {
-                        // 正解・不正解に関わらず画面下まで流れて消えた場合はセーフ
-                        fallingChars.splice(i, 1);
-                    }
-                }
-            }
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            if (gameState === 'select') {
-                ctx.fillStyle = '#000';
-                ctx.font = 'bold 18px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('竹内希来里＆蔵盛妃那乃の', 200, 80);
-                ctx.fillText('ひらがなゲッター', 200, 110);
-                ctx.font = '14px sans-serif';
-                ctx.fillText('メンバーを選んでください', 200, 150);
-
-                // きらり枠
-                ctx.fillStyle = '#e6f2ff';
-                ctx.fillRect(30, 200, 150, 180);
-                ctx.strokeStyle = '#0066cc';
-                ctx.strokeRect(30, 200, 150, 180);
-                if (imgKirari.complete) ctx.drawImage(imgKirari, 45, 210, 120, 130);
-                ctx.fillStyle = '#000';
-                ctx.fillText('竹内希来里', 105, 365);
-
-                // ひなの枠
-                ctx.fillStyle = '#ffe6f2';
-                ctx.fillRect(220, 200, 150, 180);
-                ctx.strokeStyle = '#cc0066';
-                ctx.strokeRect(220, 200, 150, 180);
-                if (imgHinano.complete) ctx.drawImage(imgHinano, 235, 210, 120, 130);
-                ctx.fillStyle = '#000';
-                ctx.fillText('蔵盛妃那乃', 295, 365);
-
-            } else if (gameState === 'playing') {
-                // UI
-                ctx.fillStyle = '#000';
-                ctx.font = 'bold 14px sans-serif';
-                ctx.textAlign = 'left';
-                ctx.fillText(`目標: 「${targetText}」`, 10, 25);
-                ctx.fillText(`スコア: ${score}`, 10, 50);
-
-                // ひらがな描画
-                ctx.font = 'bold 26px sans-serif';
-                ctx.fillStyle = '#d32f2f';
-                fallingChars.forEach(fc => {
-                    ctx.fillText(fc.char, fc.x, fc.y);
-                });
-
-                // プレイヤー描画
-                if (playerImg.complete) {
-                    ctx.drawImage(playerImg, playerX, playerY, playerWidth, playerHeight);
-                } else {
-                    ctx.fillStyle = '#888';
-                    ctx.fillRect(playerX, playerY, playerWidth, playerHeight);
-                }
-
-            } else if (gameState === 'gameover') {
-                ctx.fillStyle = '#d32f2f';
-                ctx.font = 'bold 30px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('GAME OVER', 200, 250);
-
-                ctx.fillStyle = '#000';
-                ctx.font = '20px sans-serif';
-                ctx.fillText(`スコア: ${score}`, 200, 300);
-
-                ctx.font = '14px sans-serif';
-                ctx.fillStyle = '#666';
-                ctx.fillText('タップしてタイトルへ戻る', 200, 360);
-            }
-        }
-
-        function gameLoop() {
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-
-        gameLoop();
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
